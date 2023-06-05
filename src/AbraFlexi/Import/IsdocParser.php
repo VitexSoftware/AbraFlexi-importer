@@ -4,17 +4,18 @@
  * Imap2AbraFlexi Isdoc to AbraFlexi convertor
  *
  * @author     Vítězslav Dvořák <info@vitexsofware.cz>
- * @copyright  (G) 2019-2020 Vitex Software
+ * @copyright  (G) 2019-2023 Vitex Software
  */
 
-namespace AbraFlexi\Imap2AF;
+namespace AbraFlexi\Import;
 
 /**
  * Convert parsed invoice into AbraFlexi format
  *
  * @author vitex
  */
-class Convertor extends Parser {
+class IsdocParser extends Parser
+{
 
     /**
      * Current CZ taxes
@@ -41,12 +42,11 @@ class Convertor extends Parser {
      * 
      * @return array
      */
-    public static function domPaymentMeansToArray($payment) {
+    public static function domPaymentMeansToArray($payment)
+    {
         $paymentArray = [];
         $paymentArrayRaw = current(self::domToArray($payment->item(0)));
-
         $paymentArray['datSplat'] = $paymentArrayRaw['Details']['PaymentDueDate'];
-
         return $paymentArray;
     }
 
@@ -57,10 +57,10 @@ class Convertor extends Parser {
      * 
      * @return array
      */
-    public function domSuplierToArray($suplier) {
+    public function domSuplierToArray($suplier)
+    {
         $suplierArray = [];
         $suplierArrayRaw = current(self::domToArray($suplier->item(0)));
-
         $suplierArray['nazev'] = $suplierArrayRaw['PartyName']['Name'];
         $suplierArray['ulice'] = $suplierArrayRaw['PostalAddress']['StreetName'] . ' ' . $suplierArrayRaw['PostalAddress']['BuildingNumber'];
         $suplierArray['mesto'] = $suplierArrayRaw['PostalAddress']['CityName'];
@@ -74,7 +74,6 @@ class Convertor extends Parser {
         $suplierArray['dic'] = $suplierArrayRaw['PartyTaxScheme']['CompanyID'];
         $suplierArray['platceDph'] = ($suplierArrayRaw['PartyTaxScheme']['TaxScheme'] == 'VAT');
         $suplierArray['typVztahuK'] = 'typVztahu.dodavatel';
-
         return $suplierArray;
     }
 
@@ -85,9 +84,9 @@ class Convertor extends Parser {
      * 
      * @return array
      */
-    public function domCustomerToArray($customer) {
+    public function domCustomerToArray($customer)
+    {
         $customerArray = [];
-
         if ($customer->count()) {
             $customerArrayRaw = current(self::domToArray($customer->item(0)));
             $customerArray['nazev'] = $customerArrayRaw['PartyName']['Name'];
@@ -112,23 +111,23 @@ class Convertor extends Parser {
      *
      * @return array
      */
-    public function getInvoiceSuplier() {
+    public function getInvoiceSuplier()
+    {
         return $this->domSuplierToArray($this->xmlDomDocument->getElementsByTagName('AccountingSupplierParty'));
     }
 
     /**
      * Convert Dom based invoice TaxTotal Element to Array
      *
-     * @param \DOMNodeList $invoice
+     * @param \DOMNodeList $taxTotal
      * 
      * @return array
      */
-    public function domTaxTotalToArray($taxTotal) {
+    public function domTaxTotalToArray($taxTotal)
+    {
         $taxTotalArray = [];
         $taxTotalArrayRaw = self::domToArray($taxTotal->item(0));
-
         $taxSubTotal = $taxTotalArrayRaw['TaxSubTotal'];
-
         if (array_key_exists('TaxableAmount', $taxSubTotal)) {
             $taxTotalArray['sumZklZakl'] = $taxTotalArrayRaw['TaxSubTotal']['TaxableAmount'];
             $taxTotalArray['sumCelkZakl'] = $taxTotalArrayRaw['TaxSubTotal']['TaxInclusiveAmount'];
@@ -142,7 +141,6 @@ class Convertor extends Parser {
 
 
         $taxTotalArray['sumDphCelkem'] = $taxTotalArrayRaw['TaxAmount'];
-
         return $taxTotalArray;
     }
 
@@ -154,9 +152,9 @@ class Convertor extends Parser {
      * 
      * @return array
      */
-    public static function domInvoiceToArray($invoice, $invoiceArray = []) {
+    public static function domInvoiceToArray($invoice, $invoiceArray = [])
+    {
         $invoiceArrayRaw = self::domToArray($invoice->item(0));
-
         $invoiceArray['id'] = 'ext:fc:' . $invoiceArrayRaw['ID'];
         $invoiceArray['cisDosle'] = $invoiceArrayRaw['ID'];
         $invoiceArray['uuid'] = $invoiceArrayRaw['UUID'];
@@ -167,7 +165,6 @@ class Convertor extends Parser {
         }
         $invoiceArray['mena'] = 'code:' . $invoiceArrayRaw['LocalCurrencyCode'];
         $invoiceArray['typDokl'] = 'code:FAKTURA';
-
 //        $invoiceArray['datSplat'] = '';
         return $invoiceArray;
     }
@@ -177,7 +174,8 @@ class Convertor extends Parser {
      *
      * @return array
      */
-    public function invoiceSuplier() {
+    public function invoiceSuplier()
+    {
         return $this->domSuplierToArray($this->xmlDomDocument->getElementsByTagName('AccountingSupplierParty'));
     }
 
@@ -186,7 +184,8 @@ class Convertor extends Parser {
      *
      * @return array
      */
-    public function invoiceCustomer() {
+    public function invoiceCustomer()
+    {
         return $this->domCustomerToArray($this->xmlDomDocument->getElementsByTagName('AccountingCustomerParty'));
     }
 
@@ -195,7 +194,8 @@ class Convertor extends Parser {
      *
      * @return array
      */
-    public function paymentMeans() {
+    public function paymentMeans()
+    {
         return $this->domPaymentMeansToArray($this->xmlDomDocument->getElementsByTagName('PaymentMeans'));
     }
 
@@ -203,7 +203,8 @@ class Convertor extends Parser {
      * 
      * @return array
      */
-    public function invoiceItems() {
+    public function invoiceItems()
+    {
         $invoiceItems = [];
         $invoiceLines = $this->xmlDomDocument->getElementsByTagName('InvoiceLine');
         if (count($invoiceLines)) {
@@ -219,14 +220,13 @@ class Convertor extends Parser {
      *
      * @return array of \AbraFlexi\FakturaPrijata properties
      */
-    public function invoiceInfo() {
+    public function invoiceInfo()
+    {
 //Remove Branches - See https://bugs.php.net/bug.php?id=61858
 
         $element = $this->xmlDomDocument->documentElement;
-
         $element->removeChild($element->getElementsByTagName('AccountingSupplierParty')->item(0));
         $element->removeChild($element->getElementsByTagName('AccountingCustomerParty')->item(0));
-
         $buyerCustomerParty = $element->getElementsByTagName('BuyerCustomerParty')->item(0);
         if (is_object($buyerCustomerParty)) {
             $element->removeChild($buyerCustomerParty);
@@ -237,18 +237,14 @@ class Convertor extends Parser {
             $element->removeChild($delivery);
         }
         $element->removeChild($element->getElementsByTagName('InvoiceLines')->item(0));
-
 //$taxTotal = $this->domTaxTotalToArray($this->xmlDomDocument->getElementsByTagName('TaxTotal'));
 
         $element->removeChild($element->getElementsByTagName('TaxTotal')->item(0));
-
 //$legalMonetaryTotal = $this->domLMTotalToArray($this->xmlDomDocument->getElementsByTagName('LegalMonetaryTotal'));
 
         $element->removeChild($element->getElementsByTagName('LegalMonetaryTotal')->item(0));
         $element->removeChild($element->getElementsByTagName('PaymentMeans')->item(0));
-
         $invoiceInfo = $this->domInvoiceToArray($this->xmlDomDocument->getElementsByTagName('Invoice'));
-
 //        return array_merge($invoiceInfo, $taxTotal);
         return $invoiceInfo;
     }
@@ -260,10 +256,10 @@ class Convertor extends Parser {
      * 
      * @return array
      */
-    public function domLMTotalToArray($taxTotal) {
+    public function domLMTotalToArray($taxTotal)
+    {
         $lmTotalArray = [];
         $lmTotalArrayRaw = self::domToArray($taxTotal->item(0));
-
         /*
           <TaxExclusiveAmount>3550.44000</TaxExclusiveAmount>
           <TaxInclusiveAmount>4296.00000</TaxInclusiveAmount>
@@ -279,7 +275,6 @@ class Convertor extends Parser {
         $lmTotalArray['sumCelkZakl'] = $lmTotalArrayRaw['TaxInclusiveAmount'];
         $lmTotalArray['sumZklZakl'] = $lmTotalArrayRaw['TaxableAmount'];
         $lmTotalArray['sumCelkem'] = $lmTotalArrayRaw['PayableAmount'];
-
         return $lmTotalArray;
     }
 
@@ -290,7 +285,8 @@ class Convertor extends Parser {
      * 
      * @return array
      */
-    public function domInvoiceItemToArray($item) {
+    public function domInvoiceItemToArray($item)
+    {
         $itemArray = [
             'typPolozkyK' => 'typPolozky.text',
             'ucetni' => false,
@@ -299,14 +295,12 @@ class Convertor extends Parser {
             'kratkyPopis' => ''
         ];
         $itemArrayRaw = self::domToArray($item);
-
         if (is_array($itemArrayRaw['Item'])) {
             $itemArray['nazev'] = array_key_exists('Description', $itemArrayRaw['Item']) ? $itemArrayRaw['Item']['Description'] : '';
         } else {
             $itemArray['nazev'] = 'n/a';
         }
         $itemArray['cenaMj'] = $itemArrayRaw['UnitPriceTaxInclusive'];
-
         if (isset($itemArrayRaw['LineExtensionAmount']) && ($itemArrayRaw['LineExtensionAmount'] != '0.0')) {
             $itemArray['typPolozkyK'] = 'typPolozky.ucetni';
             $itemArray['ucetni'] = true;
@@ -317,7 +311,6 @@ class Convertor extends Parser {
                 $itemArray['typCenyDphK'] = 'typCeny.sDph';
             }
             $itemArray['typSzbDphK'] = $this->taxes[intval($itemArrayRaw['ClassifiedTaxCategory']['Percent'])];
-
             if (isset($this->configuration['invoiceRoundingDefaults']) && isset($this->configuration['roundingList'])) {
                 if (array_search($itemArray['nazev'],
                                 $this->configuration['roundingList']) !== false) {
@@ -380,5 +373,4 @@ class Convertor extends Parser {
 
         return $itemArray;
     }
-
 }

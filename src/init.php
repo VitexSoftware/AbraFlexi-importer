@@ -11,14 +11,9 @@ namespace AbraFlexi\Imap2AF;
 
 require_once '../vendor/autoload.php';
 
-if (file_exists('../.env')) {
-    \Ease\Shared::singleton()->loadConfig('../.env', true);
-}
-if (file_exists('../client.json')) {
-    \Ease\Shared::singleton()->loadConfig('../client.json', true);
-}
-if (file_exists('../imap2af.json')) {
-    \Ease\Shared::singleton()->loadConfig('../imap2af.json', true);
-}
-\Ease\Locale::singleton('cs_CZ', '../i18n', 'imap2af');
-\Ease\Logger\Regent::singleton();
+/** import all configuratons from ../.env file */
+
+\Ease\Shared::init(['ABRAFLEXI_URL','ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD','ABRAFLEXI_COMPANY','IMPORTDIR'],'../.env');
+
+\Ease\Locale::singleton('cs_CZ', '../i18n', 'abraflexi-importer');
+
